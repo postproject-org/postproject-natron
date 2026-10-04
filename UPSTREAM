@@ -1,0 +1,5 @@
+host=Natron
+version=2.5.0
+url=https://github.com/NatronGitHub/Natron.git
+commit=53ee17e34438005425230468916ff223cfd8a403
+runtime=Natron-2.5.0-Linux-x86_64-no-installer.tar.xz
