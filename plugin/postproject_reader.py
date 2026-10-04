@@ -10,6 +10,7 @@ from pathlib import Path
 import _postproject_natron as native
 
 PARAMETER = "postprojectAssociation"
+REQUEST_GENERATION = "postprojectResolutionGeneration"
 
 
 def association(reader):
@@ -94,11 +95,20 @@ class ResolutionRequest:
     def __init__(self, app, reader, directory, root_name=""):
         self.app = app
         self.name = reader.getScriptName()
-        self.reader = reader
         self.filename = reader.getParam("filename").get()
         self.value = association(reader)
         if self.value is None:
             raise ValueError("Associate the Reader first")
+        generation = reader.getParam(REQUEST_GENERATION)
+        if generation is None:
+            generation = reader.createStringParam(
+                REQUEST_GENERATION, "PostProject resolution generation"
+            )
+            generation.setPersistent(False)
+            generation.setVisible(False)
+            reader.refreshUserParamsGUI()
+        self.generation = str(uuid.uuid4())
+        generation.set(self.generation)
         self.closed = False
         self.executor = ThreadPoolExecutor(max_workers=1)
         self.future = self.executor.submit(
@@ -110,11 +120,19 @@ class ResolutionRequest:
         )
 
     def apply(self):
-        if self.closed or self.app.getNode(self.name) is None:
+        if self.closed:
+            return None
+        # getNode returns a fresh wrapper. Never dereference the old Reader:
+        # its native weak reference can expire, and script names can be reused.
+        reader = self.app.getNode(self.name)
+        if reader is None:
+            return None
+        generation = reader.getParam(REQUEST_GENERATION)
+        if generation is None or generation.get() != self.generation:
             return None
         if (
-            self.reader.getParam("filename").get() != self.filename
-            or association(self.reader) != self.value
+            reader.getParam("filename").get() != self.filename
+            or association(reader) != self.value
         ):
             return None
         owner = self.future.result()
@@ -122,7 +140,7 @@ class ResolutionRequest:
         if details["availability"] == 1 and len(details["candidates"]) == 1:
             native.confirm(owner)
             # Copy into the Reader before releasing the adapter's result owner.
-            self.reader.getParam("filename").set(details["candidates"][0]["pattern"])
+            reader.getParam("filename").set(details["candidates"][0]["pattern"])
         return details
 
     def close(self):

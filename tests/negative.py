@@ -11,7 +11,12 @@ root = Path(os.environ["POSTPROJECT_NATRON_ROOT"])
 repo = Path(os.environ["POSTPROJECT_NATRON_REPO"])
 sys.path[:0] = [str(repo / "build"), str(repo / "plugin")]
 import _postproject_natron as native
-from postproject_reader import ResolutionRequest, associate_reader, sequence_arguments
+from postproject_reader import (
+    ResolutionRequest,
+    associate_reader,
+    save_association,
+    sequence_arguments,
+)
 
 production = root / "shared.pproj"
 original = root / "plates"
@@ -59,6 +64,25 @@ try:
 finally:
     request.close()
 reader.getParam("filename").set(fallback)
+
+# A deleted Reader's script name may be reused by a new node. Never access
+# the dead wrapper or apply its result to the replacement, even with the same
+# filename and saved association.
+request = ResolutionRequest(app, reader, original)
+name = reader.getScriptName()
+# Natron can defer destruction while processing stops. Free the script name
+# explicitly so the test does not depend on that asynchronous timing.
+reader.setScriptName(name + "Retired")
+reader.destroy()
+reader = app.createReader(fallback)
+reader.setScriptName(name)
+assert reader.getScriptName() == name
+save_association(reader, value)
+try:
+    assert request.apply() is None
+    assert reader.getParam("filename").get() == fallback
+finally:
+    request.close()
 
 # Native result strings remain owned Python values after the native owner dies.
 owner = native.resolve(str(production), value["binding"], str(original))
