@@ -1,0 +1,55 @@
+name: Installed native Reader adapter
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      postproject_ref:
+        type: string
+        default: main
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: postproject-org/postproject-natron
+      - uses: actions/checkout@v7
+        with:
+          repository: postproject-org/postproject
+          ref: ${{ inputs.postproject_ref || 'main' }}
+          path: postproject
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: postproject -> target
+      - name: Produce the installed package
+        run: |
+          cargo build --release --locked -p postproject-ffi --manifest-path postproject/Cargo.toml
+          cmake -S postproject -B package \
+            -DPOSTPROJECT_LIBRARY="$PWD/postproject/target/release/libpostproject.so" \
+            -DPOSTPROJECT_STATIC_LIBRARY="$PWD/postproject/target/release/libpostproject.a" \
+            -DCMAKE_INSTALL_PREFIX="$PWD/install"
+          cmake --install package
+      - name: Consume only the install prefix
+        run: |
+          cmake -S . -B build -DCMAKE_PREFIX_PATH="$PWD/install"
+          cmake --build build
+          POSTPROJECT_ABI_TRACE="$PWD/natron-contract.txt" \
+            ctest --test-dir build --output-on-failure
+      - run: python -m pip install ruff==0.16.8
+      - run: ruff check plugin tests && ruff format --check plugin tests
+      - uses: actions/upload-artifact@v6
+        with:
+          name: natron-cpp-contract
+          path: natron-contract.txt
+          if-no-files-found: error

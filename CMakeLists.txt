@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
 project(PostProjectNatron LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(PostProject 0.6 REQUIRED CONFIG)
 find_package(Python3 3.10 REQUIRED COMPONENTS Development.Module)
 add_library(adapter STATIC src/association.cpp src/resolution.cpp)
