@@ -45,6 +45,7 @@ shutil.move(original, moved)
 request = ResolutionRequest(reopened, reader, moved, "plates")
 try:
     details = request.apply()
+    assert len(details["recorded_locators"]) == 2, details
     assert details["availability"] == 1 and len(details["candidates"]) == 1, details
     assert reader.getParam("filename").get() == str(moved / "plateA.####.png")
 finally:

@@ -48,8 +48,25 @@ jobs:
             ctest --test-dir build --output-on-failure
       - run: python -m pip install ruff==0.16.8
       - run: ruff check plugin tests && ruff format --check plugin tests
+      - name: Record trace provenance
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, subprocess, tomllib
+          def revision(directory):
+              return subprocess.check_output(["git", "-C", directory, "rev-parse", "HEAD"], text=True).strip()
+          package = tomllib.loads(pathlib.Path("postproject/Cargo.toml").read_text())["workspace"]["package"]["version"]
+          library = pathlib.Path("install/lib/libpostproject.so")
+          pathlib.Path("natron-contract.json").write_text(json.dumps({
+              "host": "natron", "scenario": "installed adapter contract", "kind": "contract-test",
+              "adapter_commit": revision("."), "postproject_commit": revision("postproject"),
+              "package": package, "library_sha256": hashlib.sha256(library.read_bytes()).hexdigest(),
+              "trace": "natron-contract.txt"
+          }, indent=2) + "\n")
+          PY
       - uses: actions/upload-artifact@v6
         with:
           name: natron-cpp-contract
-          path: natron-contract.txt
+          path: |
+            natron-contract.txt
+            natron-contract.json
           if-no-files-found: error
