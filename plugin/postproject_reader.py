@@ -122,6 +122,9 @@ class ResolutionRequest:
     def apply(self):
         if self.closed:
             return None
+        owner = self.future.result()
+        if self.closed:
+            return None
         # getNode returns a fresh wrapper. Never dereference the old Reader:
         # its native weak reference can expire, and script names can be reused.
         reader = self.app.getNode(self.name)
@@ -135,7 +138,6 @@ class ResolutionRequest:
             or association(reader) != self.value
         ):
             return None
-        owner = self.future.result()
         details = native.details(owner)
         if details["availability"] == 1 and len(details["candidates"]) == 1:
             native.confirm(owner)

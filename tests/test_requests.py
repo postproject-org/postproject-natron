@@ -87,6 +87,18 @@ class RequestTests(unittest.TestCase):
         self.assertIsNotNone(current.apply())
         self.native.confirm.assert_called_once()
 
+    def test_generation_is_checked_after_waiting_for_the_worker(self):
+        request = self.request()
+
+        def completed():
+            self.reader.deleted = True
+            self.reader = Reader()
+            return object()
+
+        with patch.object(request.future, "result", side_effect=completed):
+            self.assertIsNone(request.apply())
+        self.native.confirm.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
