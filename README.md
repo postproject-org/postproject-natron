@@ -7,6 +7,9 @@ CPython extension exposes owning values to Natron's existing scripting seam;
 Python handles menus and Reader parameters. It does not use PostProject's
 Python binding inside Natron, whose bundled Python is 3.10.
 
+The [per-target brief](BRIEF.md) records the checked source seam, selection,
+ownership, family targets and acceptance boundary.
+
 ## Actions and scope
 
 Select one image-sequence Reader. **Associate Reader** asks for an explicit
@@ -33,7 +36,10 @@ Closing the GUI invokes the same cleanup.
 
 Native I/O releases the GIL and uses copied strings; workers never access Natron
 objects. The host thread discards results after cancellation, node deletion,
-or a changed filename/association. A revision base is acquired before reads
+or a changed filename/association. A transient request-generation parameter
+also rejects a replacement node reusing the script name or a superseding
+request. Application looks up the current Reader and never accesses a retained
+wrapper after native work. A revision base is acquired before reads
 and checked again afterward. Confirmation uses that base, never a later
 writer's revision. A structured conflict closes its transaction; refresh and
 make a new decision. No automatic retry, media merge, snapshot isolation or
