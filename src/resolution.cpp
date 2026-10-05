@@ -25,11 +25,11 @@ Result<Resolution> resolve(const std::string &path,
   if (locators.next_cursor)
     return Error(ErrorCode::invalid_argument,
                  "Too many locators for the selected Reader");
-  ResolutionOptions options;
+  POSTPROJECT_TRY_ASSIGN(auto options, ResolutionOptions::create());
   if (root.empty())
-    options.addSearchDirectory(directory);
+    POSTPROJECT_TRY(options.addSearchDirectory(directory));
   else
-    options.addRootMapping(root, directory);
+    POSTPROJECT_TRY(options.addRootMapping(root, directory));
   // Presence reports required-frame gaps. Verify content only for a complete
   // selected sequence; incomplete collection hashes cannot certify identity.
   POSTPROJECT_TRY_ASSIGN(
@@ -38,7 +38,7 @@ Result<Resolution> resolve(const std::string &path,
         return value.representation_id == representation.id &&
                value.availability == RepresentationAvailability::online;
       })) {
-    options.setVerification(VerificationMode::content);
+    POSTPROJECT_TRY(options.setVerification(VerificationMode::content));
     POSTPROJECT_TRY_ASSIGN(
         values, production.resolveAsset(representation.asset_id, options));
   }
