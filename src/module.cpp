@@ -59,7 +59,7 @@ PyObject *failure(const Error &error) {
     return nullptr;
   if (const auto *conflict = error.transactionConflict()) {
     const auto base = conflict->base_revision_id
-        ? std::optional<std::string>(uuid_text(*conflict->base_revision_id))
+        ? std::optional<std::string>(conflict->base_revision_id->toString().value())
         : std::nullopt;
     PyObject *value = Py_BuildValue(
         "{s:i,s:s,s:z,s:K,s:s,s:K}", "kind",
@@ -68,7 +68,7 @@ PyObject *failure(const Error &error) {
         base ? base->c_str() : nullptr, "base_sequence",
         static_cast<unsigned long long>(conflict->base_revision_sequence),
         "superseding_revision_id",
-        uuid_text(conflict->superseding_revision_id).c_str(),
+        conflict->superseding_revision_id.toString().value().c_str(),
         "superseding_sequence",
         static_cast<unsigned long long>(
             conflict->superseding_revision_sequence));
