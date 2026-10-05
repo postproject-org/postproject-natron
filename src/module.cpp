@@ -58,13 +58,17 @@ PyObject *failure(const Error &error) {
   if (!details)
     return nullptr;
   if (const auto *conflict = error.transactionConflict()) {
+    const auto *root = std::get_if<MediaRootId>(&conflict->key.target);
+    const auto target = root
+        ? root->toString().value()
+        : uuid_text(std::get<ObjectRef>(conflict->key.target).id);
     const auto base = conflict->base_revision_id
         ? std::optional<std::string>(conflict->base_revision_id->toString().value())
         : std::nullopt;
     PyObject *value = Py_BuildValue(
         "{s:i,s:s,s:z,s:K,s:s,s:K}", "kind",
         static_cast<int>(conflict->key.kind), "target_id",
-        uuid_text(conflict->key.target_id).c_str(), "base_revision_id",
+        target.c_str(), "base_revision_id",
         base ? base->c_str() : nullptr, "base_sequence",
         static_cast<unsigned long long>(conflict->base_revision_sequence),
         "superseding_revision_id",
