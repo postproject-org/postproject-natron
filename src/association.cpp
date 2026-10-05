@@ -43,7 +43,7 @@ Result<std::string> associate(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
   POSTPROJECT_TRY_ASSIGN(const auto matches, candidates(path, sequence));
-  std::optional<Uuid> asset;
+  std::optional<AssetId> asset;
   std::optional<Uuid> representation;
   if (!selected.empty()) {
     if (std::find(matches.begin(), matches.end(), selected) == matches.end())
@@ -78,7 +78,7 @@ Result<std::string> associate(const std::string &path,
                                        "Natron sequence"));
   }
   POSTPROJECT_TRY(transaction.addExternalIdentifier(
-      {ObjectKind::asset, *asset},
+      ObjectRef::asset(*asset),
       {"fr.inria.Natron:reader", reader_id, "image-sequence"}));
   POSTPROJECT_TRY(transaction.commit());
   if (!representation) {
