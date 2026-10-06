@@ -13,8 +13,9 @@ Result<Resolution> resolve(const std::string &path,
   // Take the decision base before reading. A later revision is never our commit
   // receipt.
   POSTPROJECT_TRY_ASSIGN(const auto before, production.latestRevision());
+  POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(binding.object.id));
+                         production.representation(representation_id));
   if (!representation.image_sequence || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Binding is not a compact Reader sequence");
@@ -68,8 +69,9 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(binding.object.id));
+                         production.representation(representation_id));
   if (representation.resources.size() != 1 ||
       representation.resources.front().id != resolution.resource)
     return Error(ErrorCode::conflict,
@@ -111,8 +113,9 @@ Result<ContentVerification> verify(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(binding.object.id));
+                         production.representation(representation_id));
   if (!representation.image_sequence || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Verification requires one sequence resource");
@@ -125,8 +128,9 @@ Result<Refresh> refresh(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(binding.object.id));
+                         production.representation(representation_id));
   POSTPROJECT_TRY_ASSIGN(const auto asset,
                          production.asset(representation.asset_id));
   POSTPROJECT_TRY_ASSIGN(const auto revisions,

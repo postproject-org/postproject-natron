@@ -28,8 +28,7 @@ candidates(const std::string &path, const ImageSequenceInput &sequence) {
   for (const auto &match : page.items) {
     POSTPROJECT_TRY_ASSIGN(auto binding,
                            (HostObjectBinding{production_id,
-                                              {ObjectKind::representation,
-                                               match.representation_id}})
+                                              ObjectRef::representation(match.representation_id)})
                                .toString());
     result.push_back(std::move(binding));
   }
@@ -44,15 +43,16 @@ Result<std::string> associate(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
   POSTPROJECT_TRY_ASSIGN(const auto matches, candidates(path, sequence));
   std::optional<AssetId> asset;
-  std::optional<Uuid> representation;
+  std::optional<RepresentationId> representation;
   if (!selected.empty()) {
     if (std::find(matches.begin(), matches.end(), selected) == matches.end())
       return Error(ErrorCode::conflict,
                    "Selected candidate is no longer at this locator; refresh");
     POSTPROJECT_TRY_ASSIGN(const auto binding,
                            checked_binding(production, selected));
+    POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
     POSTPROJECT_TRY_ASSIGN(const auto value,
-                           production.representation(binding.object.id));
+                           production.representation(representation_id));
     if (!value.image_sequence)
       return Error(ErrorCode::invalid_argument,
                    "Reader requires an image sequence");
@@ -90,7 +90,7 @@ Result<std::string> associate(const std::string &path,
     representation = values.front().id;
   }
   return HostObjectBinding{production_id,
-                           {ObjectKind::representation, *representation}}
+                           ObjectRef::representation(*representation)}
       .toString();
 }
 } // namespace pilot
