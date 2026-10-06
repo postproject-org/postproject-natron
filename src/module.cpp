@@ -61,7 +61,7 @@ PyObject *failure(const Error &error) {
     const auto *root = std::get_if<MediaRootId>(&conflict->key.target);
     const auto target = root
         ? root->toString().value()
-        : uuid_text(std::get<ObjectRef>(conflict->key.target).id);
+        : uuid_text(std::get<ObjectRef>(conflict->key.target).asUuid());
     const auto base = conflict->base_revision_id
         ? std::optional<std::string>(conflict->base_revision_id->toString().value())
         : std::nullopt;

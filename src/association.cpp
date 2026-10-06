@@ -8,7 +8,7 @@ Result<HostObjectBinding> checked_binding(const Production &production,
   POSTPROJECT_TRY_ASSIGN(auto binding, HostObjectBinding::fromString(value));
   POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
   if (binding.production_id != production_id ||
-      binding.object.kind != ObjectKind::representation)
+      binding.object.kind() != ObjectKind::representation)
     return Error(ErrorCode::invalid_argument,
                  "Binding names another production or object kind");
   return binding;
