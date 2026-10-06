@@ -9,7 +9,7 @@ struct Resolution {
   std::vector<ResolutionCandidate> candidates;
   std::vector<AvailabilityIssue> issues;
   std::vector<ResourceLocator> locators;
-  Uuid resource;
+  ResourceId resource;
   std::optional<Revision> base;
 };
 struct Refresh {
