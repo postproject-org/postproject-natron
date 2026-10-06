@@ -1,7 +1,7 @@
 # PostProject Reader pilot for Natron
 
 An optional Reader association action for **Natron 2.5.0** and installed
-**PostProject 0.7.0-alpha.1 development SDK** (C ABI 42, schema 17). The C++17 adapter performs
+**PostProject 0.7.0-alpha.1 development SDK** (C ABI 43, schema 17). The C++17 adapter performs
 production operations through the installed header-only wrapper. A small
 CPython extension exposes owning values to Natron's existing scripting seam;
 Python handles menus and Reader parameters. It does not use PostProject's
