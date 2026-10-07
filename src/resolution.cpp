@@ -103,7 +103,8 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
   POSTPROJECT_TRY(transaction.confirmLocator(resolution.resource, candidate.uri,
                                              candidate.media_root,
                                              candidate.sequence_naming));
-  return transaction.commit();
+  POSTPROJECT_TRY(transaction.commit());
+  return {};
 }
 
 Result<ContentVerification> verify(const std::string &path,
