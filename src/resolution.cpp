@@ -16,7 +16,7 @@ Result<Resolution> resolve(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
                          production.representation(representation_id));
-  if (!representation.image_sequence || representation.resources.size() != 1)
+  if (!representation.imageSequence() || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Binding is not a compact Reader sequence");
   const auto resource = representation.resources.front().id;
@@ -117,7 +117,7 @@ Result<ContentVerification> verify(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
                          production.representation(representation_id));
-  if (!representation.image_sequence || representation.resources.size() != 1)
+  if (!representation.imageSequence() || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Verification requires one sequence resource");
   return production.verifyResource(representation.resources.front().id,

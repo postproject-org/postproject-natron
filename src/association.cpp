@@ -53,13 +53,13 @@ Result<std::string> associate(const std::string &path,
     POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
     POSTPROJECT_TRY_ASSIGN(const auto value,
                            production.representation(representation_id));
-    if (!value.image_sequence)
+    if (!value.imageSequence())
       return Error(ErrorCode::invalid_argument,
                    "Reader requires an image sequence");
     // Frame domain and playback rate are separate from the directory naming.
-    if (value.image_sequence->start != sequence.start ||
-        value.image_sequence->end != sequence.end ||
-        value.image_sequence->step != sequence.step)
+    if (value.imageSequence()->start != sequence.start ||
+        value.imageSequence()->end != sequence.end ||
+        value.imageSequence()->step != sequence.step)
       return Error(ErrorCode::conflict,
                    "Reader frame domain differs from the selected sequence");
     asset = value.asset_id;
