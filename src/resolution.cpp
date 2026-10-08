@@ -52,7 +52,7 @@ Result<Resolution> resolve(const std::string &path,
   for (const auto &value : values) {
     if (value.representation_id == representation.id &&
         value.resources.size() == 1)
-      return Resolution{value.availability, value.resources.front().candidates,
+      return Resolution{value.availability, value.resources.front().candidates(),
                         value.issues,       locators.items,
                         resource,           before};
   }
