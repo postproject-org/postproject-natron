@@ -39,11 +39,10 @@ objects. The host thread discards results after cancellation, node deletion,
 or a changed filename/association. A transient request-generation parameter
 also rejects a replacement node reusing the script name or a superseding
 request. Application looks up the current Reader and never accesses a retained
-wrapper after native work. A revision base is acquired before reads
-and checked again afterward. Confirmation uses that base, never a later
-writer's revision. A structured conflict closes its transaction; refresh and
-make a new decision. No automatic retry, media merge, snapshot isolation or
-remote-production behavior is promised.
+wrapper after native work. Each operation reads coherent production knowledge;
+resolution retains that view's decision base for confirmation. Filesystem bytes
+remain current. A structured conflict closes its transaction; refresh and make
+a new decision. There is no automatic retry or media merge.
 
 ## Build against an installed package
 
@@ -58,10 +57,10 @@ and the installed PostProject C/C++ package. The module uses the Python stable
 ABI with a 3.10 floor. The accepted Linux build used Python 3.14 headers and
 loaded in Natron's bundled 3.10 interpreter. Installed consumers invoke no Cargo.
 
-Development option factories/setters propagate errors immediately. Structured
-conflicts expose an empty-journal base as Python `None`. Final candidate host
-qualification remains pending; the accepted renderer evidence below describes
-the released 0.6 pilot.
+The 0.7 development SDK uses C ABI 51 and schema 19. Option factories/setters
+propagate errors immediately; structured conflicts expose an empty-journal base
+as Python `None`. Linux qualification passed the installed native contract and
+normal, negative and plugin-free renderer scenarios against this SDK.
 
 For the GUI, place `plugin/initGui.py` and `plugin/postproject_reader.py` in
 Natron's user plugin directory, and place `_postproject_natron.so` on its Python
@@ -81,7 +80,7 @@ With PostProject's maintained Python binding installed in an external Python
 
 ```sh
 python tests/run.py /tmp/natron-evidence \
-  --renderer /absolute/Natron-2.5.0-Linux-x86_64-no-installer/bin/natronrenderer \
+  --renderer /absolute/Natron-2.5.0-Linux-x86_64-no-installer/NatronRenderer \
   --library /absolute/postproject/install/lib/libpostproject.so \
   --module-dir /absolute/native-module-build
 ```
