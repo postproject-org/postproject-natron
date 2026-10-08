@@ -60,7 +60,7 @@ Result<void> exercise(const fs::path &root) {
   POSTPROJECT_TRY(confirm(path, binding, already_here, 0));
   POSTPROJECT_TRY_ASSIGN(const auto after_noop, production.latestRevision());
   POSTPROJECT_TRY(
-      require(after_noop->id == already_here.base->id,
+      require(after_noop->id == already_here.base.revision->id,
               "Confirming a known locator manufactured a revision"));
   const auto moved = root / "moved";
   fs::rename(original, moved);
@@ -102,7 +102,7 @@ Result<void> exercise(const fs::path &root) {
   // rather than relabelling the old decision with the writer's latest revision.
   POSTPROJECT_TRY_ASSIGN(const auto current,
                          resolve(path, binding, alternative.string()));
-  POSTPROJECT_TRY(require(current.base->sequence > stale.base->sequence,
+  POSTPROJECT_TRY(require(current.base.revision->sequence > stale.base.revision->sequence,
                           "Conflict refresh did not advance the base"));
   POSTPROJECT_TRY_ASSIGN(const auto selected, production.asset(asset));
   POSTPROJECT_TRY(

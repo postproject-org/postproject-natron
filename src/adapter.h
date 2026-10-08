@@ -10,7 +10,7 @@ struct Resolution {
   std::vector<AvailabilityIssue> issues;
   std::vector<ResourceLocator> locators;
   ResourceId resource;
-  std::optional<Revision> base;
+  DecisionBase base;
 };
 struct Refresh {
   std::uint64_t through;

@@ -10,19 +10,18 @@ Result<Resolution> resolve(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
-  // Take the decision base before reading. A later revision is never our commit
-  // receipt.
-  POSTPROJECT_TRY_ASSIGN(const auto before, production.latestRevision());
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
+  POSTPROJECT_TRY_ASSIGN(const auto base, read.decisionBase());
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(representation_id));
+                         read.representation(representation_id));
   if (!representation.imageSequence() || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Binding is not a compact Reader sequence");
   const auto resource = representation.resources.front().id;
   // Inspect bounded locator pages for the Reader's alternative naming display.
   POSTPROJECT_TRY_ASSIGN(const auto locators,
-                         production.locators(resource, 100));
+                         read.locators(resource, 100));
   if (locators.next_cursor)
     return Error(ErrorCode::invalid_argument,
                  "Too many locators for the selected Reader");
@@ -34,27 +33,21 @@ Result<Resolution> resolve(const std::string &path,
   // Presence reports required-frame gaps. Verify content only for a complete
   // selected sequence; incomplete collection hashes cannot certify identity.
   POSTPROJECT_TRY_ASSIGN(
-      auto values, production.resolveAsset(representation.asset_id, options));
+      auto values, read.resolveAsset(representation.asset_id, options));
   if (std::any_of(values.begin(), values.end(), [&](const auto &value) {
         return value.representation_id == representation.id &&
                value.availability == RepresentationAvailability::online;
       })) {
     POSTPROJECT_TRY(options.setVerification(VerificationMode::content));
     POSTPROJECT_TRY_ASSIGN(
-        values, production.resolveAsset(representation.asset_id, options));
+        values, read.resolveAsset(representation.asset_id, options));
   }
-  POSTPROJECT_TRY_ASSIGN(const auto after, production.latestRevision());
-  if (before.has_value() != after.has_value() ||
-      (before && before->id != after->id))
-    return Error(
-        ErrorCode::conflict,
-        "Production changed during resolution; refresh before deciding");
   for (const auto &value : values) {
     if (value.representation_id == representation.id &&
         value.resources.size() == 1)
       return Resolution{value.availability, value.resources.front().candidates(),
                         value.issues,       locators.items,
-                        resource,           before};
+                        resource,           base};
   }
   return Error(ErrorCode::not_found,
                "Selected representation has no resolution result");
@@ -63,15 +56,16 @@ Result<Resolution> resolve(const std::string &path,
 Result<void> confirm(const std::string &path, const std::string &binding_text,
                      const Resolution &resolution, std::size_t index) {
   if (resolution.availability != RepresentationAvailability::online ||
-      resolution.candidates.size() != 1 || index != 0 || !resolution.base)
+      resolution.candidates.size() != 1 || index != 0)
     return Error(ErrorCode::conflict,
                  "Incomplete or ambiguous sequence: native path unchanged");
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(representation_id));
+                         read.representation(representation_id));
   if (representation.resources.size() != 1 ||
       representation.resources.front().id != resolution.resource)
     return Error(ErrorCode::conflict,
@@ -80,7 +74,7 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
   // A verified locator already present is usable without staging it again.
   // Retain the decision's revision fence even for this read-only no-op.
   POSTPROJECT_TRY_ASSIGN(const auto locators,
-                         production.locators(resolution.resource, 100));
+                         read.locators(resolution.resource, 100));
   if (locators.next_cursor)
     return Error(ErrorCode::invalid_argument,
                  "Too many locators; refresh the Reader");
@@ -89,14 +83,16 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
             return item.locator.uri == candidate.uri &&
                    item.locator.sequence_naming == candidate.sequence_naming;
           })) {
-    POSTPROJECT_TRY_ASSIGN(const auto latest, production.latestRevision());
-    if (!latest || latest->id != resolution.base->id)
+    POSTPROJECT_TRY_ASSIGN(const auto current, read.decisionBase());
+    if (current.production_id != resolution.base.production_id ||
+        current.revision.has_value() != resolution.base.revision.has_value() ||
+        (current.revision && current.revision->id != resolution.base.revision->id))
       return Error(ErrorCode::conflict,
                    "Production changed; discard this Reader decision");
     return {};
   }
   POSTPROJECT_TRY_ASSIGN(auto transaction,
-                         production.beginTransaction(resolution.base->id));
+                         production.edit(resolution.base));
   POSTPROJECT_TRY(transaction.setRevisionContext(
       {OriginIdentity{"fr.inria.Natron", "2.5.0", std::nullopt},
        "Confirm Reader locator"}));
