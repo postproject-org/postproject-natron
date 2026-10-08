@@ -224,7 +224,7 @@ PyObject *details_py(PyObject *, PyObject *args) {
       Py_DECREF(value);
     }
     for (const auto &issue : owner->value.issues) {
-      for (const auto frame : issue.frames) {
+      for (const auto frame : issue.frames()) {
         PyObject *value = PyLong_FromLongLong(frame);
         if (!value || PyList_Append(missing, value) < 0) {
           Py_XDECREF(value);
