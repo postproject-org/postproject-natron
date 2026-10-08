@@ -14,12 +14,11 @@ Result<HostObjectBinding> checked_binding(const Production &production,
   return binding;
 }
 
-Result<std::vector<std::string>>
-candidates(const std::string &path, const ImageSequenceInput &sequence) {
-  POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
-  POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
+static Result<std::vector<std::string>>
+candidates(const ReadSession &read, const ProductionId &production_id,
+           const ImageSequenceInput &sequence) {
   POSTPROJECT_TRY_ASSIGN(const auto uri, fileLocator(sequence.directory));
-  POSTPROJECT_TRY_ASSIGN(const auto page, production.findKnownMediaByLocator(
+  POSTPROJECT_TRY_ASSIGN(const auto page, read.findKnownMediaByLocator(
                                               {uri, sequence.naming}, 100));
   if (page.next_cursor)
     return Error(ErrorCode::invalid_argument,
@@ -35,13 +34,22 @@ candidates(const std::string &path, const ImageSequenceInput &sequence) {
   return result;
 }
 
+Result<std::vector<std::string>>
+candidates(const std::string &path, const ImageSequenceInput &sequence) {
+  POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
+  POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
+  return candidates(read, production_id, sequence);
+}
+
 Result<std::string> associate(const std::string &path,
                               const ImageSequenceInput &sequence,
                               const std::string &selected,
                               const std::string &reader_id) {
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto production_id, production.id());
-  POSTPROJECT_TRY_ASSIGN(const auto matches, candidates(path, sequence));
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
+  POSTPROJECT_TRY_ASSIGN(const auto matches, candidates(read, production_id, sequence));
   std::optional<AssetId> asset;
   std::optional<RepresentationId> representation;
   if (!selected.empty()) {
@@ -52,7 +60,7 @@ Result<std::string> associate(const std::string &path,
                            checked_binding(production, selected));
     POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
     POSTPROJECT_TRY_ASSIGN(const auto value,
-                           production.representation(representation_id));
+                           read.representation(representation_id));
     if (!value.imageSequence())
       return Error(ErrorCode::invalid_argument,
                    "Reader requires an image sequence");
@@ -68,7 +76,7 @@ Result<std::string> associate(const std::string &path,
     return Error(ErrorCode::conflict,
                  "Choose an existing candidate explicitly");
   }
-  POSTPROJECT_TRY_ASSIGN(auto transaction, production.beginTransaction());
+  POSTPROJECT_TRY_ASSIGN(auto transaction, read.edit());
   POSTPROJECT_TRY(transaction.setRevisionContext(
       {OriginIdentity{"fr.inria.Natron", "2.5.0", std::nullopt},
        "Associate Reader sequence"}));

@@ -110,13 +110,14 @@ Result<ContentVerification> verify(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(representation_id));
+                         read.representation(representation_id));
   if (!representation.imageSequence() || representation.resources.size() != 1)
     return Error(ErrorCode::invalid_argument,
                  "Verification requires one sequence resource");
-  return production.verifyResource(representation.resources.front().id,
+  return read.verifyResource(representation.resources.front().id,
                                    directory, naming);
 }
 
@@ -125,18 +126,22 @@ Result<Refresh> refresh(const std::string &path,
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
   POSTPROJECT_TRY_ASSIGN(const auto binding,
                          checked_binding(production, binding_text));
+  POSTPROJECT_TRY_ASSIGN(auto read, production.readSession());
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
-                         production.representation(representation_id));
+                         read.representation(representation_id));
   POSTPROJECT_TRY_ASSIGN(const auto asset,
-                         production.asset(representation.asset_id));
+                         read.asset(representation.asset_id));
   POSTPROJECT_TRY_ASSIGN(const auto revisions,
-                         production.changesSince(after, 100));
+                         read.changesSince(after, 100));
   std::uint64_t through = after, events = 0;
   for (const auto &revision : revisions) {
     POSTPROJECT_TRY_ASSIGN(const auto page,
-                           production.revisionEvents(revision.id));
-    events += page.size();
+                           read.revisionEvents(revision.id, 1000));
+    if (page.next_cursor)
+      return Error(ErrorCode::unsupported,
+                   "Revision has more than 1000 events; Reader refresh is bounded");
+    events += page.items.size();
     through = revision.sequence;
   }
   return Refresh{through, events,
