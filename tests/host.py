@@ -9,7 +9,7 @@ from pathlib import Path
 
 root = Path(os.environ["POSTPROJECT_NATRON_ROOT"])
 repo = Path(os.environ["POSTPROJECT_NATRON_REPO"])
-sys.path[:0] = [str(repo / "build"), str(repo / "plugin")]
+sys.path[:0] = [os.environ["POSTPROJECT_NATRON_MODULE"], str(repo / "plugin")]
 import _postproject_natron as native
 from postproject_reader import (
     ResolutionRequest,

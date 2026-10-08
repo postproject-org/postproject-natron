@@ -82,7 +82,8 @@ With PostProject's maintained Python binding installed in an external Python
 ```sh
 python tests/run.py /tmp/natron-evidence \
   --renderer /absolute/Natron-2.5.0-Linux-x86_64-no-installer/bin/natronrenderer \
-  --library /absolute/postproject/install/lib/libpostproject.so
+  --library /absolute/postproject/install/lib/libpostproject.so \
+  --module-dir /absolute/native-module-build
 ```
 
 The root must not exist. The runner makes genuine PNG sequences with frames

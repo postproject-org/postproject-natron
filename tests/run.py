@@ -8,12 +8,21 @@ import sys
 import time
 from pathlib import Path
 
-from postproject import MetadataProperty, MetadataString, Production
+from postproject import (
+    AssetRef,
+    MetadataProperty,
+    MetadataString,
+    Production,
+    RepresentationRef,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("root", type=Path)
 parser.add_argument("--renderer", required=True, type=Path)
 parser.add_argument("--library", required=True, type=Path)
+parser.add_argument(
+    "--module-dir", type=Path, help="CMake build containing the native module"
+)
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[1]
 root = args.root.resolve()
@@ -33,6 +42,7 @@ for scenario, script in (("normal", "host.py"), ("negative", "negative.py")):
     environment = os.environ | {
         "POSTPROJECT_NATRON_ROOT": str(directory),
         "POSTPROJECT_NATRON_REPO": str(repo),
+        "POSTPROJECT_NATRON_MODULE": str((args.module_dir or repo / "build").resolve()),
         "POSTPROJECT_NATRON_PYTHON": sys.executable,
         "POSTPROJECT_LIBRARY": str(args.library.resolve()),
         "POSTPROJECT_ABI_TRACE": str(directory / f"natron-{scenario}.txt"),
@@ -70,10 +80,10 @@ for scenario, script in (("normal", "host.py"), ("negative", "negative.py")):
         for asset in production.assets:
             representation = production.representations[asset.id][0]
             assert (
-                production.host_bindings[representation.id]
+                production.host_bindings[RepresentationRef(representation.id)]
                 == bindings[asset.display_name]
             )
-            assertions = production.metadata[asset.id]
+            assertions = production.metadata[AssetRef(asset.id)]
             assert any(
                 item.property == MetadataProperty("example.org/unrecognized", "note")
                 and item.value == MetadataString("keep exactly: α/unknown")

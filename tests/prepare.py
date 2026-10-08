@@ -4,13 +4,16 @@ import argparse
 import json
 import struct
 import zlib
+from fractions import Fraction
 from pathlib import Path
 
 from postproject import (
+    AssetRef,
     ImageSequenceSource,
     MetadataProperty,
     MetadataString,
     Production,
+    RepresentationRef,
     SequenceNaming,
     file_locator,
 )
@@ -58,24 +61,26 @@ with Production.create(
                     1001,
                     1003,
                     1,
-                    24,
-                    1,
+                    Fraction(24),
                     (),
                 ),
                 prefix,
             )
             transaction.add_metadata(
-                asset,
+                AssetRef(asset),
                 MetadataProperty("example.org/unrecognized", "note"),
                 MetadataString("keep exactly: α/unknown"),
             )
+        transaction.commit()
     destination = root / "plates"
     directory.rename(destination)
     directory = destination
     bindings = {}
     for asset in production.assets:
         representation = production.representations[asset.id][0]
-        bindings[asset.display_name] = production.host_bindings[representation.id]
+        bindings[asset.display_name] = production.host_bindings[
+            RepresentationRef(representation.id)
+        ]
         with production.transaction() as transaction:
             transaction.confirm_locator(
                 representation.resources[0].id,
@@ -83,5 +88,6 @@ with Production.create(
                 media_root="plates",
                 sequence_naming=SequenceNaming(asset.display_name, ".png", 4),
             )
+            transaction.commit()
     (root / "bindings.json").write_text(json.dumps(bindings))
 print(root)
