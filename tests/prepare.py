@@ -10,8 +10,6 @@ from pathlib import Path
 from postproject import (
     AssetRef,
     ImageSequenceSource,
-    MetadataProperty,
-    MetadataString,
     Production,
     RepresentationRef,
     SequenceNaming,
@@ -68,8 +66,8 @@ with Production.create(
             )
             transaction.add_metadata(
                 AssetRef(asset),
-                MetadataProperty("example.org/unrecognized", "note"),
-                MetadataString("keep exactly: α/unknown"),
+                ("example.org/unrecognized", "note"),
+                "keep exactly: α/unknown",
             )
         transaction.commit()
     destination = root / "plates"
