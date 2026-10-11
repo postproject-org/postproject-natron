@@ -75,9 +75,11 @@ for scenario, script in (("normal", "host.py"), ("negative", "negative.py")):
     with Production.open(
         directory / "shared.pproj", library_path=args.library
     ) as production:
-        assert len(production.assets) == 2
+        with production.read_session() as view:
+            assets = tuple(view.assets())
+        assert len(assets) == 2
         bindings = json.loads((directory / "bindings.json").read_text())
-        for asset in production.assets:
+        for asset in assets:
             representation = production.representations[asset.id][0]
             assert (
                 production.host_bindings[RepresentationRef(representation.id)]

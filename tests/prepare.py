@@ -76,7 +76,9 @@ with Production.create(
     directory.rename(destination)
     directory = destination
     bindings = {}
-    for asset in production.assets:
+    with production.read_session() as view:
+        assets = tuple(view.assets())
+    for asset in assets:
         representation = production.representations[asset.id][0]
         bindings[asset.display_name] = production.host_bindings[
             RepresentationRef(representation.id)

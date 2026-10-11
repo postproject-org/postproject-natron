@@ -1,7 +1,7 @@
 # PostProject Reader pilot for Natron
 
 An optional Reader association action for **Natron 2.5.0** and installed
-**PostProject 0.8.0-alpha.1 SDK** (C ABI 52, schema 27). The C++17 adapter performs
+**PostProject 0.9.0-alpha.1 SDK** (C ABI 52, schema 27). The C++17 adapter performs
 production operations through the installed header-only wrapper. A small
 CPython extension exposes owning values to Natron's existing scripting seam;
 Python handles menus and Reader parameters. It does not use PostProject's
@@ -57,10 +57,11 @@ and the installed PostProject C/C++ package. The module uses the Python stable
 ABI with a 3.10 floor. The accepted Linux build used Python 3.14 headers and
 loaded in Natron's bundled 3.10 interpreter. Installed consumers invoke no Cargo.
 
-The 0.8 SDK uses C ABI 52 and schema 27. Option factories/setters
-propagate errors immediately; structured conflicts expose an empty-journal base
-as Python `None`. Linux qualification passed the installed native contract and
-normal, negative and plugin-free renderer scenarios against this SDK.
+The 0.9 development SDK uses C ABI 52 and schema 27. Whole resolution configurations
+are checked atomically; structured conflicts expose an empty-journal base
+as Python `None`. The 0.8 Linux qualification passed the installed native contract and
+normal, negative and plugin-free renderer scenarios. The 0.9 development
+configuration passes native checks; its renderer qualification is separate.
 
 For the GUI, place `plugin/initGui.py` and `plugin/postproject_reader.py` in
 Natron's user plugin directory, and place `_postproject_natron.so` on its Python
