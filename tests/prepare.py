@@ -47,7 +47,7 @@ def png(color):
 with Production.create(
     root / "shared.pproj", "Sequence handoff", library_path=args.library
 ) as production:
-    with production.transaction() as transaction:
+    with production.edit() as transaction:
         transaction.add_media_root("plates")
         for prefix, blue in (("plateA.", 20), ("plateB.", 180)):
             for frame in range(1001, 1004):
@@ -83,7 +83,7 @@ with Production.create(
         bindings[asset.display_name] = production.host_bindings[
             RepresentationRef(representation.id)
         ]
-        with production.transaction() as transaction:
+        with production.edit() as transaction:
             transaction.confirm_locator(
                 representation.resources[0].id,
                 file_locator(directory, library_path=args.library),

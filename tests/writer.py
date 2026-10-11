@@ -14,7 +14,7 @@ with Production.open(args.production) as production:
     binding = production.host_bindings.parse(args.binding)
     assert isinstance(binding.object, RepresentationRef)
     representation = production.representation(binding.object.id)
-    with production.transaction() as transaction:
+    with production.edit() as transaction:
         transaction.confirm_locator(
             representation.resources[0].id,
             file_locator(args.directory),

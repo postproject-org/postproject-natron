@@ -48,7 +48,7 @@ for count in (2, 202):
             Production.open(
                 root / "shared.pproj", library_path=args.library
             ) as production,
-            production.transaction() as transaction,
+            production.edit() as transaction,
         ):
             # Independent logical assets may share this other locator;
             # their naming must never contaminate the selected A query.
