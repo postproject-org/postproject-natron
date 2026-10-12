@@ -18,7 +18,7 @@ static Result<std::vector<std::string>>
 candidates(const ReadSession &read, const ProductionId &production_id,
            const ImageSequenceInput &sequence) {
   POSTPROJECT_TRY_ASSIGN(const auto uri, fileLocator(sequence.directory));
-  POSTPROJECT_TRY_ASSIGN(const auto page, read.findKnownMediaByLocator(
+  POSTPROJECT_TRY_ASSIGN(const auto page, read.findKnownMedia(
                                               {uri, sequence.naming}, 100));
   if (page.next_cursor)
     return Error(ErrorCode::invalid_argument,

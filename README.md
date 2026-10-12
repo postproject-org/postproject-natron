@@ -61,7 +61,9 @@ The 0.9 development SDK uses C ABI 53 and schema 27. Whole resolution configurat
 are checked atomically; structured conflicts expose an empty-journal base
 as Python `None`. The 0.8 Linux qualification passed the installed native contract and
 normal, negative and plugin-free renderer scenarios. The 0.9 development
-configuration passes native checks; its renderer qualification is separate.
+configuration passes native checks. The revised canonical lookup passes the
+installed contract and Natron 2.5.0 normal, negative and plugin-free renderer
+checks; it retains explicit sequence naming and ambiguous-candidate selection.
 
 For the GUI, place `plugin/initGui.py` and `plugin/postproject_reader.py` in
 Natron's user plugin directory, and place `_postproject_natron.so` on its Python
