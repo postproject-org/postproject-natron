@@ -30,10 +30,10 @@ Result<void> exercise(const fs::path &root) {
   POSTPROJECT_TRY(
       require(!empty_base, "New production unexpectedly has a base revision"));
   {
-    POSTPROJECT_TRY_ASSIGN(auto abandoned, production.beginTransaction());
+    POSTPROJECT_TRY_ASSIGN(auto abandoned, production.edit());
     POSTPROJECT_TRY(abandoned.rollback());
   }
-  POSTPROJECT_TRY_ASSIGN(auto transaction, production.beginTransaction());
+  POSTPROJECT_TRY_ASSIGN(auto transaction, production.edit());
   ImageSequenceInput source{
       original.string(), {"plateA.", ".png", 4}, 1001, 1003, 1, 24, 1, {}};
   POSTPROJECT_TRY_ASSIGN(
@@ -90,7 +90,7 @@ Result<void> exercise(const fs::path &root) {
   const auto alternative = root / "other";
   fs::copy(pending, alternative, fs::copy_options::recursive);
   POSTPROJECT_TRY_ASSIGN(auto other, Production::open(path));
-  POSTPROJECT_TRY_ASSIGN(auto change, other.beginTransaction());
+  POSTPROJECT_TRY_ASSIGN(auto change, other.edit());
   POSTPROJECT_TRY_ASSIGN(const auto uri, fileLocator(alternative.string()));
   POSTPROJECT_TRY(
       change.confirmLocator(stale.resource, uri, std::nullopt, source.naming));

@@ -93,9 +93,7 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
                    "Production changed; discard this Reader decision");
     return {};
   }
-  POSTPROJECT_TRY_ASSIGN(auto transaction,
-                         production.edit(resolution.base));
-  POSTPROJECT_TRY(transaction.setRevisionContext(
+  POSTPROJECT_TRY_ASSIGN(auto transaction, production.edit(resolution.base,
       {OriginIdentity{"fr.inria.Natron", "2.5.0", std::nullopt},
        "Confirm Reader locator"}));
   POSTPROJECT_TRY(transaction.confirmLocator(resolution.resource, candidate.uri,

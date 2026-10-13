@@ -76,8 +76,7 @@ Result<std::string> associate(const std::string &path,
     return Error(ErrorCode::conflict,
                  "Choose an existing candidate explicitly");
   }
-  POSTPROJECT_TRY_ASSIGN(auto transaction, read.edit());
-  POSTPROJECT_TRY(transaction.setRevisionContext(
+  POSTPROJECT_TRY_ASSIGN(auto transaction, read.edit(
       {OriginIdentity{"fr.inria.Natron", "2.5.0", std::nullopt},
        "Associate Reader sequence"}));
   if (!asset) {
