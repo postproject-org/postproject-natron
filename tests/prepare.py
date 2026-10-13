@@ -63,7 +63,7 @@ with Production.create(
                     (),
                 ),
                 prefix,
-            )
+            ).asset_id
             transaction.add_metadata(
                 AssetRef(asset),
                 ("example.org/unrecognized", "note"),

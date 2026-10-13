@@ -37,8 +37,9 @@ Result<void> exercise(const fs::path &root) {
   ImageSequenceInput source{
       original.string(), {"plateA.", ".png", 4}, 1001, 1003, 1, 24, 1, {}};
   POSTPROJECT_TRY_ASSIGN(
-      const auto asset,
+      const auto imported,
       transaction.importMedia(MediaSource::imageSequence(source)));
+  const auto asset = imported.asset_id;
   source.naming.prefix = "plateB.";
   POSTPROJECT_TRY(transaction.importMedia(MediaSource::imageSequence(source)));
   POSTPROJECT_TRY(transaction.commit());

@@ -82,21 +82,15 @@ Result<std::string> associate(const std::string &path,
        "Associate Reader sequence"}));
   if (!asset) {
     POSTPROJECT_TRY_ASSIGN(
-        asset, transaction.importMedia(MediaSource::imageSequence(sequence),
-                                       "Natron sequence"));
+        const auto imported, transaction.importMedia(MediaSource::imageSequence(sequence),
+                                                     "Natron sequence"));
+    asset = imported.asset_id;
+    representation = imported.representation_id;
   }
   POSTPROJECT_TRY(transaction.addExternalIdentifier(
       ObjectRef::asset(*asset),
       {"fr.inria.Natron:reader", reader_id, "image-sequence"}));
   POSTPROJECT_TRY(transaction.commit());
-  if (!representation) {
-    POSTPROJECT_TRY_ASSIGN(const auto values,
-                           production.representations(*asset));
-    if (values.size() != 1)
-      return Error(ErrorCode::conflict,
-                   "Imported asset has an unexpected representation set");
-    representation = values.front().id;
-  }
   return HostObjectBinding{production_id,
                            ObjectRef::representation(*representation)}
       .toString();
