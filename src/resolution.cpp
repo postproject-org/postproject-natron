@@ -45,11 +45,29 @@ Result<Resolution> resolve(const std::string &path,
         values, read.resolveAsset(representation.asset_id, options));
   }
   for (const auto &value : values) {
-    if (value.representation_id == representation.id &&
-        value.resources.size() == 1)
-      return Resolution{value.availability, value.resources.front().candidates(),
-                        value.issues,       locators.items,
-                        resource,           base};
+    if (value.representation_id == representation.id && value.resources.size() == 1) {
+      const auto &resolved = value.resources.front();
+      std::optional<RelinkSelection> selection;
+      if (auto verified = value.selectVerified()) {
+        selection = *std::move(verified);
+      } else if (value.availability == RepresentationAvailability::online &&
+                 resolved.candidates().size() == 1) {
+        const auto &candidate = resolved.candidates().front();
+        const auto incomplete = [](const auto &evidence) {
+          return evidence.kind == EvidenceKind::search_truncated ||
+                 evidence.kind == EvidenceKind::discovery_error;
+        };
+        // Reader sequence policy explicitly accepts recorded sampled collection
+        // evidence after complete required-frame coverage; this is not a full hash.
+        const bool sampled = std::any_of(candidate.evidence.begin(), candidate.evidence.end(),
+            [](const auto &evidence) { return evidence.kind == EvidenceKind::partial_fingerprint_match; });
+        if (sampled && !std::any_of(resolved.evidence.begin(), resolved.evidence.end(), incomplete) &&
+            !std::any_of(candidate.evidence.begin(), candidate.evidence.end(), incomplete))
+          selection = RelinkSelection{base, representation.id, {{resource, candidate}}};
+      }
+      return Resolution{value.availability, resolved.candidates(), value.issues,
+                        locators.items, resource, base, std::move(selection)};
+    }
   }
   return Error(ErrorCode::not_found,
                "Selected representation has no resolution result");
@@ -58,7 +76,7 @@ Result<Resolution> resolve(const std::string &path,
 Result<void> confirm(const std::string &path, const std::string &binding_text,
                      const Resolution &resolution, std::size_t index) {
   if (resolution.availability != RepresentationAvailability::online ||
-      resolution.candidates.size() != 1 || index != 0)
+      resolution.candidates.size() != 1 || index != 0 || !resolution.selection)
     return Error(ErrorCode::conflict,
                  "Incomplete or ambiguous sequence: native path unchanged");
   POSTPROJECT_TRY_ASSIGN(auto production, Production::open(path));
@@ -68,37 +86,15 @@ Result<void> confirm(const std::string &path, const std::string &binding_text,
   POSTPROJECT_TRY_ASSIGN(const auto representation_id, binding.object.representationId());
   POSTPROJECT_TRY_ASSIGN(const auto representation,
                          read.representation(representation_id));
-  if (representation.resources.size() != 1 ||
+  if (representation.id != resolution.selection->representation_id ||
+      representation.resources.size() != 1 ||
       representation.resources.front().id != resolution.resource)
     return Error(ErrorCode::conflict,
                  "Reader association changed; discard the result");
-  const auto &candidate = resolution.candidates[index];
-  // A verified locator already present is usable without staging it again.
-  // Retain the decision's revision fence even for this read-only no-op.
-  POSTPROJECT_TRY_ASSIGN(const auto locators,
-                         read.locators(resolution.resource, 100));
-  if (locators.next_cursor)
-    return Error(ErrorCode::invalid_argument,
-                 "Too many locators; refresh the Reader");
-  if (std::any_of(
-          locators.items.begin(), locators.items.end(), [&](const auto &item) {
-            return item.locator.uri == candidate.uri &&
-                   item.locator.sequence_naming == candidate.sequence_naming;
-          })) {
-    POSTPROJECT_TRY_ASSIGN(const auto current, read.decisionBase());
-    if (current.production_id != resolution.base.production_id ||
-        current.revision.has_value() != resolution.base.revision.has_value() ||
-        (current.revision && current.revision->id != resolution.base.revision->id))
-      return Error(ErrorCode::conflict,
-                   "Production changed; discard this Reader decision");
-    return {};
-  }
   POSTPROJECT_TRY_ASSIGN(auto transaction, production.edit(resolution.base,
       {OriginIdentity{"fr.inria.Natron", "2.5.0", std::nullopt},
        "Confirm Reader locator"}));
-  POSTPROJECT_TRY(transaction.confirmLocator(resolution.resource, candidate.uri,
-                                             candidate.media_root,
-                                             candidate.sequence_naming));
+  POSTPROJECT_TRY(transaction.confirmSelection(*resolution.selection));
   POSTPROJECT_TRY(transaction.commit());
   return {};
 }

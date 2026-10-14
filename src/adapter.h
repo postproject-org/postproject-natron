@@ -11,6 +11,7 @@ struct Resolution {
   std::vector<ResourceLocator> locators;
   ResourceId resource;
   DecisionBase base;
+  std::optional<RelinkSelection> selection;
 };
 struct Refresh {
   std::uint64_t through;
