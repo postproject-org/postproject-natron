@@ -8,13 +8,7 @@ import sys
 import time
 from pathlib import Path
 
-from postproject import (
-    AssetRef,
-    MetadataProperty,
-    MetadataString,
-    Production,
-    RepresentationRef,
-)
+from postproject import AssetRef, MetadataProperty, Production, RepresentationRef
 
 parser = argparse.ArgumentParser()
 parser.add_argument("root", type=Path)
@@ -88,7 +82,7 @@ for scenario, script in (("normal", "host.py"), ("negative", "negative.py")):
             assertions = production.metadata[AssetRef(asset.id)]
             assert any(
                 item.property == MetadataProperty("example.org/unrecognized", "note")
-                and item.value == MetadataString("keep exactly: α/unknown")
+                and item.value == ("keep exactly: α/unknown")
                 for item in assertions
             )
     print(
